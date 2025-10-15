@@ -14,7 +14,9 @@ SRC_DIR="../.."
 EMCC_FLAGS="-O3 \
   -s WASM=1 \
   -s ALLOW_MEMORY_GROWTH=1 \
-  -s EXPORTED_FUNCTIONS=_malloc,_free,_dna_encrypt_message_raw,_dna_decrypt_message_raw \
+  -s INITIAL_MEMORY=33554432 \
+  -s STACK_SIZE=8388608 \
+  -s EXPORTED_FUNCTIONS=_malloc,_free,_wasm_crypto_init,_dna_context_new,_dna_context_free,_dna_encrypt_message_raw,_dna_decrypt_message_raw \
   -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,getValue,setValue,HEAPU8 \
   -s MODULARIZE=1 \
   -s EXPORT_NAME=DNAModule \
@@ -27,13 +29,15 @@ EMCC_FLAGS="-O3 \
 INCLUDES="-I${SRC_DIR} \
   -I${SRC_DIR}/crypto/kyber512 \
   -I${SRC_DIR}/crypto/dilithium \
-  -I./libsodium/libsodium-js/include"
+  -I./libsodium/libsodium-js-sumo/include \
+  -I./openssl-wasm/include"
 
 # Core source files
 CORE_SOURCES="${SRC_DIR}/dna_api.c \
-  ./qgp_aes_libsodium.c \
-  ./aes_keywrap_libsodium.c \
+  ./qgp_aes_openssl.c \
+  ./aes_keywrap_openssl.c \
   ./qgp_platform_wasm.c \
+  ./wasm_utils.c \
   ${SRC_DIR}/qgp_signature.c \
   ${SRC_DIR}/qgp_kyber.c \
   ${SRC_DIR}/qgp_dilithium.c \
@@ -70,7 +74,8 @@ ALL_SOURCES="$CORE_SOURCES $KYBER_SOURCES $DILITHIUM_SOURCES"
 # Compile
 echo "📦 Compiling C sources to WebAssembly..."
 emcc $EMCC_FLAGS $INCLUDES $ALL_SOURCES \
-  ./libsodium/libsodium-js/lib/libsodium.a \
+  ./openssl-wasm/libcrypto.a \
+  ./libsodium/libsodium-js-sumo/lib/libsodium.a \
   -o ${OUTPUT_DIR}/dna_wasm.js
 
 # Check output

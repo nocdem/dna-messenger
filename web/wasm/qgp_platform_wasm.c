@@ -11,6 +11,23 @@
 #include <string.h>
 
 /* ============================================================================
+ * Initialization (WASM Implementation)
+ * ============================================================================ */
+
+/**
+ * Initialize libsodium
+ * MUST be called before any crypto operations
+ * @return 0 on success, -1 on error
+ */
+int wasm_crypto_init(void) {
+    if (sodium_init() < 0) {
+        fprintf(stderr, "libsodium initialization failed\n");
+        return -1;
+    }
+    return 0;
+}
+
+/* ============================================================================
  * Random Number Generation (WASM Implementation)
  * ============================================================================ */
 
