@@ -1,0 +1,6 @@
+# Build artifacts
+dna_wasm.js
+dna_wasm.wasm
+
+# libsodium source (clone from GitHub during build)
+libsodium/

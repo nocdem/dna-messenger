@@ -14,10 +14,11 @@ SRC_DIR="../.."
 EMCC_FLAGS="-O3 \
   -s WASM=1 \
   -s ALLOW_MEMORY_GROWTH=1 \
-  -s EXPORTED_FUNCTIONS='[\"_malloc\",\"_free\",\"_dna_encrypt_message_raw\",\"_dna_decrypt_message_raw\"]' \
-  -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\",\"getValue\",\"setValue\",\"HEAPU8\"]' \
+  -s EXPORTED_FUNCTIONS=_malloc,_free,_dna_encrypt_message_raw,_dna_decrypt_message_raw \
+  -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,getValue,setValue,HEAPU8 \
   -s MODULARIZE=1 \
-  -s EXPORT_NAME='DNAModule' \
+  -s EXPORT_NAME=DNAModule \
+  -s USE_ZLIB=1 \
   -fno-unroll-loops \
   -fno-vectorize \
   -Wno-unused-command-line-argument"
@@ -25,16 +26,19 @@ EMCC_FLAGS="-O3 \
 # Include paths
 INCLUDES="-I${SRC_DIR} \
   -I${SRC_DIR}/crypto/kyber512 \
-  -I${SRC_DIR}/crypto/dilithium"
+  -I${SRC_DIR}/crypto/dilithium \
+  -I./libsodium/libsodium-js/include"
 
 # Core source files
 CORE_SOURCES="${SRC_DIR}/dna_api.c \
-  ${SRC_DIR}/qgp_aes.c \
+  ./qgp_aes_libsodium.c \
+  ./aes_keywrap_libsodium.c \
+  ./qgp_platform_wasm.c \
+  ${SRC_DIR}/qgp_signature.c \
   ${SRC_DIR}/qgp_kyber.c \
   ${SRC_DIR}/qgp_dilithium.c \
   ${SRC_DIR}/qgp_random.c \
   ${SRC_DIR}/qgp_key.c \
-  ${SRC_DIR}/aes_keywrap.c \
   ${SRC_DIR}/armor.c"
 
 # Kyber512 sources (exclude test files)
@@ -65,7 +69,9 @@ ALL_SOURCES="$CORE_SOURCES $KYBER_SOURCES $DILITHIUM_SOURCES"
 
 # Compile
 echo "📦 Compiling C sources to WebAssembly..."
-emcc $EMCC_FLAGS $INCLUDES $ALL_SOURCES -o ${OUTPUT_DIR}/dna_wasm.js
+emcc $EMCC_FLAGS $INCLUDES $ALL_SOURCES \
+  ./libsodium/libsodium-js/lib/libsodium.a \
+  -o ${OUTPUT_DIR}/dna_wasm.js
 
 # Check output
 if [ -f "${OUTPUT_DIR}/dna_wasm.js" ] && [ -f "${OUTPUT_DIR}/dna_wasm.wasm" ]; then
