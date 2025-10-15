@@ -208,13 +208,32 @@ Before every git commit:
 
 ## BRANCHING STRATEGY
 
-- `main` - Stable releases only
-- `develop` - Integration branch
-- `feature/*` - New features
+- `main` - Stable releases (CLI + Qt GUI)
+- `feature/web-messenger` - Web messenger development (Phase 4)
+- `feature/*` - Other new features
 - `bugfix/*` - Bug fixes
 - `docs/*` - Documentation updates
 
-**Current Branch:** `main` (initial fork)
+**Active Branches:**
+- `main` - v0.1.52-alpha (Qt GUI, CLI, C library)
+- `feature/web-messenger` - v0.2.0-alpha (WebAssembly + Node.js + React)
+
+**Branch Structure:**
+```
+main (stable)
+  └── feature/web-messenger (web development)
+      └── web/
+          ├── server/      # Node.js backend
+          ├── client/      # React frontend
+          ├── wasm/        # WebAssembly build
+          └── docs/        # Web docs
+```
+
+**Merge Policy:**
+- Test web messenger thoroughly before merging to main
+- Ensure backward compatibility with existing database schema
+- All web development isolated in `web/` directory
+- C library remains unchanged (shared between all clients)
 
 ---
 
@@ -222,18 +241,26 @@ Before every git commit:
 
 ```
 /opt/dna-messenger/
-├── *.c (source files)
-├── *.h (header files)
-├── crypto/ (vendored pq-crystals)
-├── build/ (binary: dna)
-├── docs/ (documentation)
-├── examples/ (integration examples, future)
+├── *.c (source files - C library)
+├── *.h (header files - C library)
+├── crypto/ (vendored pq-crystals: Kyber512 + Dilithium3)
+├── build/ (compiled binaries: dna, dna_messenger, dna_messenger_gui)
+├── gui/ (Qt5 desktop application)
+├── messenger/ (CLI messenger client)
+├── web/ (web messenger - feature/web-messenger branch only)
+│   ├── server/ (Node.js backend)
+│   ├── client/ (React frontend)
+│   ├── wasm/ (WebAssembly build)
+│   └── docs/ (web-specific docs)
+├── docs/ (general documentation)
 ├── CMakeLists.txt (build config)
 ├── README.md (project overview)
 ├── CLAUDE.md (this file)
 ├── ROADMAP.md (development plan)
 └── LICENSE (GPL-3.0)
 ```
+
+**Note:** `web/` directory only exists on `feature/web-messenger` branch
 
 ---
 
