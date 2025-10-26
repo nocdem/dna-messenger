@@ -1,517 +1,475 @@
-# DNA Messenger - Development Guidelines for Claude AI
+# CLAUDE.md
 
-**Last Updated:** 2025-10-23
-**Project:** DNA Messenger (Post-Quantum Encrypted Messenger)
-**Current Phase:** Phase 5 (Web Messenger) - Phase 4 & 8 Complete
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+**Last Updated:** 2025-10-26
+**Branch:** feature/mobile
+**Current Phase:** Phase 6 (Mobile Applications) - Kotlin Multiplatform Mobile Setup
 
 ---
 
-## Project Overview
+## Repository Overview
 
-DNA Messenger is a post-quantum end-to-end encrypted messaging platform with cpunk wallet integration. It uses Kyber512 for key encapsulation, Dilithium3 for signatures, and AES-256-GCM for symmetric encryption.
+DNA Messenger is a post-quantum encrypted messaging platform with cpunk wallet integration. This branch (`feature/mobile`) contains both desktop (Qt5) and mobile (Kotlin Multiplatform) implementations sharing the same C cryptographic libraries.
 
 **Key Features:**
-- End-to-end encrypted messaging
-- Group chats with member management
-- cpunk wallet integration (CPUNK, CELL, KEL tokens)
-- Cross-platform (Linux, Windows)
-- Qt5 GUI with theme support
+- Post-quantum encryption (Kyber512 + Dilithium3)
+- End-to-end encrypted messaging with groups
+- cpunk wallet (CPUNK, CELL, KEL tokens via Cellframe blockchain)
 - BIP39 recovery phrases
+- Cross-platform: Desktop (Linux/Windows) + Mobile (Android/iOS)
 
 ---
 
-## Current Architecture
+## Architecture
 
-### Components
-1. **Core Library** (`libdna.a`)
-   - Post-quantum cryptography (Kyber512, Dilithium3)
-   - Memory-based encryption/decryption API
-   - Multi-recipient support
+### Three-Layer Stack
 
-2. **CLI Client** (`dna_messenger`)
-   - Command-line interface
-   - PostgreSQL message storage
-   - Contact management
-
-3. **GUI Client** (`dna_messenger_gui`)
-   - Qt5 desktop application
-   - Modern card-based UI
-   - Theme system (cpunk.io cyan, cpunk.club orange)
-   - Integrated wallet with transaction history
-
-4. **Wallet Integration**
-   - Cellframe wallet file support (.dwallet format)
-   - RPC integration with Cellframe node
-   - Transaction builder and signing
-   - Balance and history queries
-
-### Directory Structure
 ```
-/opt/dna-messenger/
-├── crypto/                  # Cryptography libraries
-│   ├── dilithium/          # Dilithium3 signatures
-│   └── kyber512/           # Kyber512 key encapsulation
-├── gui/                     # Qt5 GUI application
-│   ├── MainWindow.*        # Main chat window
-│   ├── WalletDialog.*      # Wallet balance & transactions
-│   ├── SendTokensDialog.*  # Send tokens form
-│   ├── ReceiveDialog.*     # Receive with QR codes
-│   ├── TransactionHistoryDialog.* # Full transaction list
-│   └── ThemeManager.*      # Global theme management
-├── wallet.c/h              # Cellframe wallet integration
-├── cellframe_rpc.c/h       # Cellframe RPC client
-├── cellframe_tx_builder_minimal.c/h # Transaction builder
-├── dna_api.h               # Public library API
-└── CMakeLists.txt          # Build configuration
+┌─────────────────────────────────────────┐
+│  UI Layer                               │
+│  - Desktop: Qt5 (gui/)                  │
+│  - Mobile: Jetpack Compose + SwiftUI    │
+│           (mobile/androidApp, iosApp)   │
+└─────────────────┬───────────────────────┘
+                  ↓
+┌─────────────────────────────────────────┐
+│  Business Logic                         │
+│  - Desktop: C++ (gui/)                  │
+│  - Mobile: Kotlin Multiplatform         │
+│           (mobile/shared/commonMain)    │
+└─────────────────┬───────────────────────┘
+                  ↓
+┌─────────────────────────────────────────┐
+│  Native C Libraries (SHARED)            │
+│  - libdna_lib.a (crypto + messaging)    │
+│  - libkyber512.a, libdilithium.a        │
+│  - libcellframe_minimal.a (wallet)      │
+└─────────────────────────────────────────┘
 ```
 
----
+### Key Architectural Points
 
-## Development Guidelines
+**C Library Layer:**
+- All cryptography in C for performance and security
+- Memory-based API (no file I/O in crypto operations)
+- Multi-recipient encryption via Kyber512
+- Dilithium3 signatures for authentication
+- Two separate Dilithium implementations:
+  - `crypto/dilithium/` - For DNA message signing
+  - `crypto/cellframe_dilithium/` - For Cellframe wallet signatures
 
-### 1. Code Style
-- **C Code:** Follow existing style (K&R-ish with 4-space indentation)
-- **C++ Code (Qt):** Qt coding conventions, camelCase for methods
-- **Comments:** Use clear, concise comments for complex logic
-- **Memory Management:** Always free allocated memory, check for NULL
-
-### 2. Cryptography
-- **DO NOT modify crypto primitives** without expert review
-- Use existing API functions from `dna_api.h`
-- All encryption/decryption must use memory-based operations
-- Never log or print keys or decrypted messages
-
-### 3. Database
+**Desktop (Qt5):**
+- Directly links C libraries
 - PostgreSQL for message storage (ai.cpunk.io:5432)
-- Schema: `messages`, `contacts`, `groups`, `group_members`
-- Use prepared statements to prevent SQL injection
-- Handle connection failures gracefully
+- Cellframe RPC for wallet operations
+- Themes: cpunk.io (cyan #00d4ff) and cpunk.club (orange #ff6b35)
 
-### 4. GUI Development (Qt5)
-- Use Qt signals/slots for event handling
-- Apply themes via `ThemeManager::instance()`
-- All dialogs should be theme-aware
-- Use `setAttribute(Qt::WA_DeleteOnClose)` for modal dialogs
-- Handle window focus and activation properly
-
-### 5. Wallet Integration
-- Read Cellframe wallet files from `~/.dna/` or system wallet dir
-- Use `cellframe_rpc.h` API for RPC calls
-- All token amounts are strings to preserve precision
-- Use smart decimal formatting (8 decimals for tiny amounts)
-- Transaction builder uses minimal serialization (no JSON-C in builder)
-
-### 6. Cross-Platform Support
-- **Linux:** Primary development platform
-- **Windows:** Cross-compile using MXE (M cross environment)
-- Use CMake for build configuration
-- Avoid platform-specific code when possible
-- Test on both platforms before committing
+**Mobile (Kotlin Multiplatform):**
+- Shared business logic in `mobile/shared/commonMain/`
+- Android: JNI wrapper calls C libraries
+- iOS: Direct C interop (no JNI needed)
+- Same PostgreSQL database as desktop
+- Same theme colors as desktop
 
 ---
 
-## Phase 8: cpunk Wallet Integration (COMPLETE)
-
-**Status:** ✅ Complete (2025-10-23)
-
-### What Was Implemented
-1. **WalletDialog** - Main wallet view
-   - Card-based token display (CPUNK, CELL, KEL)
-   - Balance queries via Cellframe RPC
-   - Recent 3 transactions display
-   - 4-button layout: Send, Receive, DEX, History
-
-2. **SendTokensDialog** - Send tokens
-   - Transaction builder integration
-   - UTXO query and selection
-   - Network fee handling (0.002 CELL)
-   - Dilithium signature generation
-   - RPC transaction submission
-
-3. **ReceiveDialog** - Receive tokens
-   - Display wallet addresses per network
-   - QR code generation
-   - Easy copy-to-clipboard
-
-4. **TransactionHistoryDialog** - Full transaction list
-   - All transactions with pagination
-   - Color-coded arrows (green incoming, red outgoing)
-   - Status display (ACCEPTED in green, DECLINED in red)
-   - Smart timestamp formatting
-
-5. **ThemeManager** - Global theme system
-   - Singleton pattern for theme management
-   - Signal-based theme updates
-   - Support for cpunk.io (cyan) and cpunk.club (orange)
-
-### Key Technical Decisions
-- **No wallet selection in send dialog:** Already in that wallet context
-- **Smart decimal formatting:** 8 decimals for tiny amounts, 2 for normal
-- **Direct RPC integration:** No external wallet utilities needed
-- **Theme-aware:** All wallet dialogs respond to theme changes
-- **Transaction builder:** Minimal serialization for cross-platform compatibility
-
----
-
-## Phase 5: Web Messenger (IN PROGRESS)
-
-**Status:** 🚧 Active development on `feature/web-messenger` branch
-
-### What's Done
-- [x] DNA API compiled to WebAssembly (dna_wasm.js/wasm)
-- [x] JavaScript wrapper functions
-- [x] Emscripten toolchain setup
-
-### What's Next
-- [ ] HTML5/CSS3 responsive UI
-- [ ] Browser-based messaging interface
-- [ ] IndexedDB for key storage
-- [ ] Real-time updates (WebSocket)
-
----
-
-## Phase 10: DNA Board - Censorship-Resistant Social Media (PLANNED)
-
-**Status:** 📋 Planning (Post-Phases 7-9)
-**Timeline:** 12 weeks
-**Prerequisites:** Distributed validator storage, DNA-Keyserver merge, Offline messaging
-
-### Overview
-
-DNA Board is a **censorship-resistant social media platform** built on cpunk validator network:
-
-**Core Principles:**
-1. **NO CENSORSHIP** - Content cannot be removed (no deletion endpoint)
-2. **PoH Required to Post** - Only verified humans (PoH ≥70) can create posts
-3. **Open Responses** - Anyone can reply (no PoH for replies)
-4. **Community Voting** - Thumbs up/down (FREE) to surface quality
-5. **Burn Economics** - All fees burned (deflationary)
-6. **Validator Rewards** - DAO pool distribution
-
-### Architecture
+## Directory Structure
 
 ```
-Self-Healing Validator Network (3-Replica)
-┌─────────────────────────────────────┐
-│  Post → Primary Validator           │
-│  ↓ Replicate to 2 more (lowest GB)  │
-│  ↓ 3 Validators store content       │
-│  ↓ Heartbeat monitoring (30s)       │
-│  ↓ Auto-heal if validator offline   │
-│  ↓ Back to 3 replicas               │
-└─────────────────────────────────────┘
+/opt/dna-mobile/dna-messenger/
+├── crypto/
+│   ├── kyber512/           # Post-quantum KEM
+│   ├── dilithium/          # PQ signatures (DNA)
+│   └── cellframe_dilithium/# PQ signatures (wallet)
+├── gui/                    # Qt5 desktop app
+│   ├── MainWindow.cpp      # Main chat interface
+│   ├── WalletDialog.cpp    # Wallet UI
+│   └── SendTokensDialog.cpp# Transaction builder UI
+├── mobile/                 # Mobile apps
+│   ├── docs/              # Beginner-friendly guides
+│   │   ├── ANDROID_DEVELOPMENT_GUIDE.md
+│   │   ├── DEVELOPMENT_TODO.md (12-week plan)
+│   │   └── JNI_INTEGRATION_TUTORIAL.md
+│   ├── shared/            # Kotlin Multiplatform
+│   │   ├── src/commonMain/    # Shared logic
+│   │   ├── src/androidMain/   # Android (JNI)
+│   │   └── src/iosMain/       # iOS (C interop)
+│   ├── androidApp/        # Android UI
+│   └── iosApp/            # iOS UI
+├── dna_api.h              # Public C API
+├── wallet.h               # Cellframe wallet API
+├── cellframe_rpc.h        # Blockchain RPC client
+└── CMakeLists.txt         # Desktop + C library build
 ```
 
-### Content & Economics
-
-| Type | Burn Fee | PoH Required | Max Size |
-|------|----------|--------------|----------|
-| Post | 1 CPUNK | Yes (≥70) | 5,000 chars |
-| Image | 2 CPUNK | Yes | 5 MB |
-| Video | 5 CPUNK | Yes | 50 MB |
-| Reply | 0.5 CPUNK | **No** | 2,000 chars |
-| Vote | **FREE** | No | N/A |
-
-**Estimated burn:** 16M CPUNK/year (deflationary pressure)
-
-### Proof of Humanity (PoH)
-
-**Who Can Post:** humanity_score ≥ 70
-
-**Verification Tiers:**
-- Auto-Verified (75-89): Behavioral algorithm
-- Staked-Verified (90-94): Auto + 100 CPUNK stake
-- DAO-Vouched (95-99): 3 human vouches + DAO
-- Celebrity (100): Public figure + DAO
-
-**Bot Detection:** Single-destination sends, mechanical timing
-**Human Patterns:** Multiple services, irregular timing, staking
-
-### Implementation (12 Weeks)
-
-- **Weeks 1-2:** Validator backend + PoH scoring
-- **Weeks 3-4:** Gossip protocol + 3-replica replication
-- **Weeks 5-6:** Voting system + feed ranking
-- **Weeks 7-8:** Qt GUI (DNABoardTab, ComposeDialog, PostWidget)
-- **Weeks 9-10:** Media upload + wallet integration
-- **Weeks 11-12:** Testing + mainnet launch
-
-### Key Features
-
-**Censorship Resistance:**
-- No deletion endpoint (content permanent)
-- 3-validator replication across jurisdictions
-- No central authority
-- Gossip protocol ensures propagation
-
-**Quality Control:**
-- PoH prevents bot spam
-- Community voting surfaces quality
-- Ranking algorithm (votes × humanity × time)
-
-**Economic Model:**
-- All fees burned (deflationary)
-- Validators funded by DAO pool (100M Year 1, halvening)
-
-### Design Document
-
-Full specification: `/DNA_BOARD_PHASE10_PLAN.md`
-
 ---
 
-## Phase 11: Post-Quantum Voice/Video Calls (PLANNED)
+## Build Commands
 
-**Status:** 📋 Research & Planning
-**Timeline:** ~20 weeks (5 months)
-**Prerequisites:** Phase 9.1 (P2P Transport Layer)
-**Design Doc:** `/futuredesign/VOICE-VIDEO-DESIGN.md`
+### Desktop (Qt5 GUI + CLI)
 
-### Overview
-
-Fully quantum-safe voice/video calls using Kyber512 via DNA messaging + SRTP (bypasses WebRTC's quantum-vulnerable DTLS).
-
-**Technology:** libnice, libsrtp2, libopus, libvpx/libx264, PortAudio
-**Security:** Kyber512 key exchange, Dilithium3 signatures, forward secrecy, SAS verification
-
-See design doc for complete technical specification
-
----
-
-## Common Tasks
-
-### Adding a New Feature
-1. Check current phase in ROADMAP.md
-2. Follow existing code patterns
-3. Update CMakeLists.txt if adding new files
-4. Test on Linux first, then Windows
-5. Update documentation (README.md, ROADMAP.md)
-
-### Building the Project
 **Linux:**
 ```bash
+# Build C libraries + desktop apps
 mkdir build && cd build
 cmake ..
 make -j$(nproc)
+
+# Outputs:
+# - build/dna_messenger (CLI)
+# - build/gui/dna_messenger_gui (Qt GUI)
+# - build/libdna_lib.a (C library)
 ```
 
-**Windows (cross-compile from Linux):**
+**Windows (Cross-compile from Linux):**
 ```bash
+# Requires MXE (M cross environment)
 ./build-cross-compile.sh windows-x64
+# Output: dist/windows-x64/
 ```
 
-### Running Tests
+### Mobile (Android + iOS)
+
+**Prerequisites:**
 ```bash
-# CLI messenger
-./build/dna_messenger --help
-
-# GUI messenger
-./build/gui/dna_messenger_gui
+# Build C libraries first (required for mobile)
+cd build && make
 ```
 
----
-
-## API Documentation
-
-### DNA Core API (`dna_api.h`)
-```c
-// Context management
-dna_context_t* dna_context_new(void);
-void dna_context_free(dna_context_t *ctx);
-
-// Encryption
-int dna_encrypt_message(
-    const uint8_t *plaintext, size_t len,
-    const public_key_t *recipient_key,
-    dna_buffer_t *output);
-
-// Decryption
-int dna_decrypt_message(
-    const uint8_t *ciphertext, size_t len,
-    const private_key_t *my_key,
-    dna_buffer_t *output);
-```
-
-### Cellframe RPC API (`cellframe_rpc.h`)
-```c
-// RPC request structure
-typedef struct {
-    const char *method;
-    const char *subcommand;
-    json_object *arguments;
-    int id;
-} cellframe_rpc_request_t;
-
-// Make RPC call
-int cellframe_rpc_call(
-    cellframe_rpc_request_t *req,
-    cellframe_rpc_response_t **response);
-
-// Free response
-void cellframe_rpc_response_free(cellframe_rpc_response_t *resp);
-```
-
-### Wallet API (`wallet.h`)
-```c
-// Load Cellframe wallets
-int wallet_list_cellframe(wallet_list_t **list);
-
-// Get wallet address
-int wallet_get_address(
-    const cellframe_wallet_t *wallet,
-    const char *network,
-    char *address_out);
-
-// Free wallet list
-void wallet_list_free(wallet_list_t *list);
-```
-
----
-
-## Testing Guidelines
-
-### Manual Testing
-1. **Messaging:**
-   - Send message between two users
-   - Verify encryption/decryption
-   - Check delivery receipts
-
-2. **Groups:**
-   - Create group with multiple members
-   - Send messages to group
-   - Add/remove members
-
-3. **Wallet:**
-   - View balances (should match Cellframe CLI)
-   - Send transaction (verify on blockchain explorer)
-   - Check transaction history
-
-### Debug Output
-- Use `printf("[DEBUG] ...")` for development
-- Remove debug output before committing
-- Use descriptive prefixes: `[DEBUG TX]`, `[DEBUG RPC]`
-
----
-
-## Common Issues and Solutions
-
-### Wallet Balance Shows 0.00
-- Check Cellframe node is running (port 8079)
-- Verify RPC is enabled in Cellframe config
-- Check wallet file exists in `~/.dna/` or `/opt/cellframe-node/var/lib/wallet/`
-
-### Transaction Fails to Send
-- Ensure sufficient balance + fee
-- Check UTXO query returns results
-- Verify network fee address is correct
-- Check signature is generated correctly
-
-### Theme Not Applied
-- Ensure ThemeManager is initialized before dialog
-- Connect to `themeChanged` signal
-- Call `applyTheme()` in constructor
-
-### Windows Cross-Compile Fails
-- Check MXE is installed (`~/.cache/mxe/`)
-- Verify MXE dependencies are built
-- Check CMake toolchain file path
-
----
-
-## Security Considerations
-
-### Current Security Model
-- Post-quantum encryption (Kyber512 + AES-256-GCM)
-- Message signatures (Dilithium3)
-- End-to-end encryption (server cannot read)
-- Private keys stored locally (`~/.dna/`)
-
-### Known Limitations
-- No forward secrecy (planned Phase 7)
-- Metadata not protected (server sees sender/receiver)
-- No multi-device sync yet
-- No disappearing messages
-
-### Best Practices
-- Never log private keys or decrypted messages
-- Validate all inputs (addresses, amounts, signatures)
-- Check return codes from crypto functions
-- Use secure memory management (mlock in future)
-
----
-
-## Git Workflow
-
-### Branching
-- `main` - Stable releases
-- `feature/*` - New features (e.g., `feature/web-messenger`)
-- `fix/*` - Bug fixes
-
-### Commit Messages
+**Android:**
 ```bash
-# Good commit message format:
-Short summary (50 chars or less)
+cd mobile
 
-Detailed explanation if needed:
-- What changed
-- Why it changed
-- Any breaking changes
+# Debug APK
+./gradlew :androidApp:assembleDebug
+# Output: androidApp/build/outputs/apk/debug/androidApp-debug.apk
 
-🤖 Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
+# Release bundle
+./gradlew :androidApp:bundleRelease
+# Output: androidApp/build/outputs/bundle/release/
+
+# Install on device/emulator
+adb install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
+
+# View logs
+adb logcat -s "DNAMessenger"
 ```
 
-### Before Committing
-1. Test on Linux
-2. Cross-compile for Windows
-3. Remove debug output
-4. Update documentation if needed
-5. Check for memory leaks (valgrind)
+**iOS:**
+```bash
+cd mobile
+
+# Build shared framework
+./gradlew :shared:linkDebugFrameworkIos
+# Output: shared/build/bin/ios/debugFramework/shared.framework
+
+# Then open iosApp/iosApp.xcodeproj in Xcode
+```
+
+### Testing
+
+**Desktop:**
+```bash
+# No formal test suite yet for desktop
+# Manual testing via CLI or GUI
+```
+
+**Mobile:**
+```bash
+cd mobile
+
+# Shared logic tests
+./gradlew :shared:test
+
+# Android instrumented tests (requires emulator)
+./gradlew :androidApp:connectedAndroidTest
+
+# iOS tests (requires macOS)
+./gradlew :shared:iosTest
+```
 
 ---
 
-## Resources
+## Critical APIs
 
-### Documentation
-- **Main README:** `/opt/dna-messenger/README.md`
-- **Roadmap:** `/opt/dna-messenger/ROADMAP.md`
-- **API Docs:** `/opt/dna-messenger/dna_api.h` (inline comments)
+### DNA Messenger API (dna_api.h)
 
-### External Links
-- **Cellframe Docs:** https://wiki.cellframe.net
-- **Cellframe Dev Wiki:** https://dev-wiki.cellframe.net
-- **Qt5 Docs:** https://doc.qt.io/qt-5/
-- **Kyber:** https://pq-crystals.org/kyber/
-- **Dilithium:** https://pq-crystals.org/dilithium/
+**Core Functions:**
+- `dna_encrypt_message_raw()` - Encrypt with Kyber512 + AES-256-GCM
+- `dna_decrypt_message_raw()` - Decrypt and verify signature
+- `dna_keygen_encryption()` - Generate Kyber512 keypair
+- `dna_keygen_signing()` - Generate Dilithium3 keypair
+- Error codes: `DNA_OK`, `DNA_ERROR_CRYPTO`, etc.
 
-### Repositories
+**Multi-Recipient Encryption:**
+Messages can be encrypted for multiple recipients in a single ciphertext. Each recipient gets their own Kyber512-wrapped DEK (data encryption key). The actual message is encrypted once with AES-256-GCM.
+
+### Wallet API (wallet.h, cellframe_rpc.h)
+
+**Wallet Operations:**
+- `wallet_read_cellframe()` - Read .dwallet files
+- `wallet_get_address()` - Get address for network
+- `cellframe_rpc_call()` - Make RPC request to Cellframe node
+- `cellframe_tx_builder_*` - Build and sign transactions
+
+**Supported Tokens:** CPUNK, CELL, KEL (all CF20 on Cellframe blockchain)
+
+### Database Schema
+
+**PostgreSQL (ai.cpunk.io:5432):**
+- `messages` - Encrypted message blobs
+- `contacts` - Public keys and metadata
+- `groups` - Group info
+- `group_members` - Membership table
+
+---
+
+## Development Workflow
+
+### For Desktop Development
+
+1. Modify C library or Qt GUI files
+2. Rebuild: `cd build && make`
+3. Test: `./gui/dna_messenger_gui`
+4. Commit changes
+
+### For Mobile Development
+
+**Important:** Follow `mobile/docs/DEVELOPMENT_TODO.md` for structured 12-week plan.
+
+**Quick workflow:**
+1. Build C libraries for Android: See TODO Week 1, Day 5
+2. Create JNI wrapper: `mobile/shared/src/androidMain/cpp/dna_jni.cpp`
+3. Implement Kotlin actual classes: `mobile/shared/src/androidMain/kotlin/`
+4. Build Android app: `./gradlew :androidApp:assembleDebug`
+5. Test on emulator
+
+**JNI Bridge Pattern:**
+```
+Kotlin → JNI (C++) → C Library → JNI → Kotlin
+```
+
+See `mobile/docs/JNI_INTEGRATION_TUTORIAL.md` for complete guide.
+
+### Branch Strategy
+
+- `main` - Stable desktop releases
+- `feature/mobile` - Mobile development (this branch)
+- Mobile changes must maintain desktop compatibility
+
+**Rule:** Don't break desktop build when working on mobile code.
+
+---
+
+## Coding Conventions
+
+### C Code (Crypto Libraries)
+
+- K&R-ish style, 4-space indentation
+- Free all allocated memory
+- Never log private keys
+- Use `dna_error_t` for error handling
+- Comment complex crypto operations
+
+**Example:**
+```c
+dna_error_t dna_encrypt_message_raw(
+    dna_context_t *ctx,
+    const uint8_t *plaintext,
+    size_t plaintext_len,
+    // ... more params
+) {
+    if (!plaintext) return DNA_ERROR_INVALID_ARG;
+
+    // Generate DEK
+    // Encrypt with AES-256-GCM
+    // Wrap DEK with Kyber512
+    // Sign with Dilithium3
+
+    return DNA_OK;
+}
+```
+
+### Kotlin (Mobile Shared Code)
+
+Use `expect`/`actual` pattern for platform-specific code:
+
+```kotlin
+// commonMain - Interface
+expect class DNAMessenger {
+    fun encryptMessage(plaintext: ByteArray, recipientPubKey: ByteArray): Result<ByteArray>
+}
+
+// androidMain - JNI implementation
+actual class DNAMessenger {
+    private external fun nativeEncrypt(plaintext: ByteArray, recipientPubKey: ByteArray): ByteArray
+
+    actual fun encryptMessage(...): Result<ByteArray> {
+        return runCatching { nativeEncrypt(...) }
+    }
+
+    companion object {
+        init { System.loadLibrary("dna_lib") }
+    }
+}
+
+// iosMain - C interop
+actual class DNAMessenger {
+    actual fun encryptMessage(...): Result<ByteArray> {
+        return runCatching {
+            dna_encrypt_message_raw(...) // Direct C call
+        }
+    }
+}
+```
+
+### Qt/C++ (Desktop GUI)
+
+- Qt naming conventions (camelCase)
+- Use signals/slots for events
+- Theme via `ThemeManager::instance()`
+- All dialogs should be theme-aware
+
+### Theme Colors
+
+**cpunk.io (Cyan):**
+- Background: `#0a1e1e` (dark teal)
+- Primary: `#00d4ff` (cyan)
+- Secondary: `#14a098` (teal)
+
+**cpunk.club (Orange):**
+- Background: `#1a0f0a` (dark brown)
+- Primary: `#ff6b35` (orange)
+- Secondary: `#f7931e` (amber)
+
+---
+
+## Security Notes
+
+**Private Key Storage:**
+- Desktop: `~/.dna/` directory
+- Android: Android Keystore (hardware-backed)
+- iOS: iOS Keychain
+
+**BIP39 Recovery:**
+- 24-word mnemonic
+- PBKDF2 derivation
+- Deterministic key generation from seed
+
+**Encryption Flow:**
+1. Generate random DEK (32 bytes)
+2. Encrypt message with AES-256-GCM (DEK as key)
+3. For each recipient: Kyber512 encapsulation → wrap DEK
+4. Sign entire blob with Dilithium3
+5. Store: [header | wrapped_DEKs | nonce | ciphertext | tag | signature]
+
+---
+
+## Common Development Scenarios
+
+### Adding a New C Function to Mobile
+
+1. Declare in `dna_api.h`
+2. Implement in C library
+3. Create JNI wrapper in `mobile/shared/src/androidMain/cpp/dna_jni.cpp`
+4. Declare `external fun` in Kotlin actual class
+5. Call from Kotlin code
+
+### Adding a New Screen to Android App
+
+1. Create `@Composable` in `mobile/androidApp/src/main/java/io/cpunk/dna/android/ui/screen/`
+2. Create ViewModel if needed
+3. Add route to `Navigation.kt`
+4. Use `DNAMessengerTheme` for styling
+
+### Debugging JNI Crashes
+
+```bash
+# View native stack trace
+adb logcat | grep -A 50 "FATAL EXCEPTION"
+
+# Or use ndk-stack (if symbols available)
+adb logcat | ndk-stack -sym obj/local/arm64-v8a/
+```
+
+**Common JNI issues:**
+- Memory leaks (forgot to free)
+- Didn't release JNI array
+- Null pointer dereference
+- Buffer overflow
+
+See `mobile/docs/JNI_INTEGRATION_TUTORIAL.md` for debugging guide.
+
+---
+
+## External Dependencies
+
+**Desktop:**
+- OpenSSL (AES, SHA256, random)
+- PostgreSQL libpq
+- Qt5 (GUI)
+- libcurl (Cellframe RPC)
+- json-c (JSON parsing)
+
+**Mobile:**
+- Android SDK/NDK
+- Kotlin 1.9.20+
+- Jetpack Compose
+- PostgreSQL JDBC (Android)
+- Ktor (HTTP client)
+
+**All Platforms:**
+- Kyber512 (vendored in `crypto/kyber512/`)
+- Dilithium3 (vendored in `crypto/dilithium/`)
+
+---
+
+## Important Files
+
+**Must Read (Mobile Development):**
+- `mobile/docs/ANDROID_DEVELOPMENT_GUIDE.md` - Comprehensive 120-page guide
+- `mobile/docs/DEVELOPMENT_TODO.md` - 12-week roadmap with 84 tasks
+- `mobile/docs/JNI_INTEGRATION_TUTORIAL.md` - JNI patterns and examples
+
+**API Headers:**
+- `dna_api.h` - Core messaging API
+- `wallet.h` - Wallet file operations
+- `cellframe_rpc.h` - Blockchain RPC
+- `messenger.h` - High-level messenger functions
+
+**Configuration:**
+- `CMakeLists.txt` - Desktop build
+- `mobile/shared/build.gradle.kts` - Shared module build
+- `mobile/androidApp/build.gradle.kts` - Android app build
+
+---
+
+## Version Information
+
+**Versioning:** `0.1.x` (auto-incremented from git commit count)
+- Major 0 = Alpha (breaking changes expected)
+- Minor 1 = Current feature set
+- Patch x = Git commit count
+
+**Check version:**
+```bash
+# Desktop
+./build/dna_messenger --version
+
+# In code
+dna_version() // Returns "0.1.0-alpha"
+```
+
+---
+
+## Links
+
 - **GitLab (Primary):** https://gitlab.cpunk.io/cpunk/dna-messenger
 - **GitHub (Mirror):** https://github.com/nocdem/dna-messenger
+- **Cellframe:** https://cellframe.net
+- **cpunk:** https://cpunk.io
 
 ---
 
-## Contact and Support
-
-- **cpunk.io:** https://cpunk.io
-- **cpunk.club:** https://cpunk.club
-- **Telegram:** https://web.telegram.org/k/#@chippunk_official
-
----
-
-## Version History
-
-| Version | Date | Description |
-|---------|------|-------------|
-| 0.1.0 | 2025-10-14 | Initial fork from QGP |
-| 0.2.0 | 2025-10-15 | Library API complete |
-| 0.3.0 | 2025-10-16 | CLI messenger complete |
-| 0.4.0 | 2025-10-17 | Desktop GUI with groups |
-| 0.8.0 | 2025-10-23 | cpunk Wallet integration |
-| 0.5.0 | TBD | Web messenger (in progress) |
-
-**Current Version:** 0.1.120+ (auto-incremented)
-
----
-
-**Happy Coding!**
-
-When in doubt, check existing code patterns and follow the established conventions. The project prioritizes simplicity, security, and cross-platform compatibility.
+**Note:** This is the `feature/mobile` branch. Desktop development happens on `main`. Keep C libraries compatible with both.

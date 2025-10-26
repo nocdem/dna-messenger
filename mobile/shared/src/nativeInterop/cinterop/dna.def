@@ -1,0 +1,9 @@
+headers = dna_api.h messenger.h
+headerFilter = dna_api.h messenger.h
+package = io.cpunk.dna.native
+
+staticLibraries = libdna_lib.a libkyber512.a libdilithium.a
+libraryPaths = ../../build
+
+compilerOpts = -I../../
+linkerOpts = -lssl -lcrypto -lpq -lpthread -lm

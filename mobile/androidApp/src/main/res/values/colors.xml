@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- cpunk.io Theme (Cyan) -->
+    <color name="cpunk_io_primary">#00D4FF</color>         <!-- Cyan -->
+    <color name="cpunk_io_secondary">#14A098</color>       <!-- Teal -->
+    <color name="cpunk_io_background">#0A1E1E</color>      <!-- Dark Teal -->
+    <color name="cpunk_io_surface">#14A098</color>         <!-- Teal -->
+    <color name="cpunk_io_on_primary">#FFFFFF</color>      <!-- White -->
+    <color name="cpunk_io_on_secondary">#FFFFFF</color>    <!-- White -->
+    <color name="cpunk_io_on_background">#FFFFFF</color>   <!-- White -->
+
+    <!-- cpunk.club Theme (Orange) -->
+    <color name="cpunk_club_primary">#FF6B35</color>       <!-- Orange -->
+    <color name="cpunk_club_secondary">#F7931E</color>     <!-- Amber -->
+    <color name="cpunk_club_background">#1A0F0A</color>    <!-- Dark Brown -->
+    <color name="cpunk_club_surface">#F7931E</color>       <!-- Amber -->
+    <color name="cpunk_club_on_primary">#FFFFFF</color>    <!-- White -->
+    <color name="cpunk_club_on_secondary">#FFFFFF</color>  <!-- White -->
+    <color name="cpunk_club_on_background">#FFFFFF</color> <!-- White -->
+
+    <!-- Common -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray_light">#CCCCCC</color>
+    <color name="gray_dark">#333333</color>
+    <color name="green">#4CAF50</color>                    <!-- Success -->
+    <color name="red">#F44336</color>                      <!-- Error -->
+</resources>

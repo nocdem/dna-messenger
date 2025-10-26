@@ -1,0 +1,9 @@
+headers = wallet.h cellframe_rpc.h cellframe_tx_builder_minimal.h
+headerFilter = wallet.h cellframe_rpc.h cellframe_tx_builder_minimal.h
+package = io.cpunk.wallet.native
+
+staticLibraries = libcellframe_minimal.a libcellframe_dilithium.a
+libraryPaths = ../../build ../../build/crypto/cellframe_dilithium
+
+compilerOpts = -I../../
+linkerOpts = -lcurl

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">DNA Messenger</string>
+    <string name="app_tagline">Post-Quantum Encrypted Messaging</string>
+
+    <!-- Login -->
+    <string name="login_welcome">Welcome to DNA Messenger</string>
+    <string name="login_subtitle">Secure messaging with post-quantum encryption</string>
+    <string name="login_description">Secure messaging with post-quantum encryption</string>
+    <string name="login_create_identity">Create New Identity</string>
+    <string name="login_creating">Generating Keys...</string>
+    <string name="login_restore">Restore from Seed Phrase</string>
+    <string name="login_restore_identity">Restore from Seed Phrase</string>
+    <string name="login_existing_identity">Continue as %s</string>
+
+    <!-- Restore -->
+    <string name="restore_title">Restore from Seed Phrase</string>
+    <string name="restore_subtitle">Enter your 24-word BIP39 recovery phrase</string>
+    <string name="restore_instruction">Enter your 24-word recovery phrase</string>
+    <string name="restore_seed_phrase">Seed Phrase</string>
+    <string name="restore_seed_hint">word1 word2 word3...</string>
+    <string name="restore_word_count">%1$d / %2$d words</string>
+    <string name="restore_word_hint">Word %d</string>
+    <string name="restore_restore_button">Restore Identity</string>
+    <string name="restore_restoring">Restoring...</string>
+    <string name="restore_button">Restore Identity</string>
+    <string name="restore_invalid_word">Invalid word: %s</string>
+    <string name="restore_success">Identity restored successfully</string>
+    <string name="restore_failed">Failed to restore identity</string>
+    <string name="restore_help_title">How to restore</string>
+    <string name="restore_help_text">Enter all 24 words from your recovery phrase, separated by spaces. Make sure the words are spelled correctly and in the right order.</string>
+    <string name="back">Back</string>
+
+    <!-- Contacts -->
+    <string name="contacts_title">Contacts</string>
+    <string name="contacts_add">Add Contact</string>
+    <string name="contacts_search">Search contacts</string>
+    <string name="contacts_empty">No contacts yet</string>
+    <string name="contacts_delete_confirm">Delete %s from contacts?</string>
+
+    <!-- Groups -->
+    <string name="groups_title">Groups</string>
+    <string name="groups_create">Create Group</string>
+    <string name="groups_empty">No groups yet</string>
+    <string name="groups_members">%d members</string>
+
+    <!-- Chat -->
+    <string name="chat_input_hint">Type a message</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_attach">Attach</string>
+    <string name="chat_empty">No messages yet. Say hello!</string>
+    <string name="chat_delivered">Delivered</string>
+    <string name="chat_read">Read</string>
+
+    <!-- Wallet -->
+    <string name="wallet_title">Wallet</string>
+    <string name="wallet_balance">Balance</string>
+    <string name="wallet_send">Send</string>
+    <string name="wallet_receive">Receive</string>
+    <string name="wallet_history">Transaction History</string>
+    <string name="wallet_empty">No transactions yet</string>
+
+    <!-- Send Tokens -->
+    <string name="send_tokens_title">Send Tokens</string>
+    <string name="send_tokens_amount">Amount</string>
+    <string name="send_tokens_recipient">Recipient Address</string>
+    <string name="send_tokens_network_fee">Network Fee</string>
+    <string name="send_tokens_total">Total</string>
+    <string name="send_tokens_confirm">Confirm Transaction</string>
+    <string name="send_tokens_success">Transaction sent successfully</string>
+    <string name="send_tokens_failed">Transaction failed: %s</string>
+
+    <!-- Receive -->
+    <string name="receive_title">Receive Tokens</string>
+    <string name="receive_address">Your Address</string>
+    <string name="receive_copy">Copy Address</string>
+    <string name="receive_qr_code">Scan QR Code</string>
+    <string name="receive_copied">Address copied to clipboard</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_io">cpunk.io (Cyan)</string>
+    <string name="settings_theme_club">cpunk.club (Orange)</string>
+    <string name="settings_font_size">Font Size</string>
+    <string name="settings_biometric">Require Biometric</string>
+    <string name="settings_backup_seed">Backup Seed Phrase</string>
+    <string name="settings_export_pubkey">Export Public Key</string>
+    <string name="settings_about">About</string>
+
+    <!-- Biometric -->
+    <string name="biometric_title">Authenticate</string>
+    <string name="biometric_description">Use biometric to continue</string>
+    <string name="biometric_send_transaction">Authenticate to send transaction</string>
+    <string name="biometric_view_seed">Authenticate to view seed phrase</string>
+
+    <!-- Errors -->
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_encryption_failed">Encryption failed</string>
+    <string name="error_decryption_failed">Decryption failed</string>
+    <string name="error_invalid_recipient">Invalid recipient</string>
+    <string name="error_insufficient_balance">Insufficient balance</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+
+    <!-- Notifications -->
+    <string name="notification_new_message">New message from %s</string>
+    <string name="notification_group_message">%s in %s</string>
+    <string name="notification_channel_messages">Messages</string>
+    <string name="notification_channel_transactions">Transactions</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+    <string name="loading">Loading…</string>
+    <string name="retry">Retry</string>
+</resources>
