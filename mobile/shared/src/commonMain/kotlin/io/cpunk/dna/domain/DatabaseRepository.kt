@@ -3,99 +3,172 @@ package io.cpunk.dna.domain
 import io.cpunk.dna.domain.models.Message
 import io.cpunk.dna.domain.models.Contact
 import io.cpunk.dna.domain.models.Group
+import io.cpunk.dna.domain.models.GroupMember
 
 /**
  * DatabaseRepository - Cross-platform database operations
  *
+ * DEPRECATED: Direct database access is insecure for mobile apps.
+ * This should be replaced with REST API calls to a backend server.
+ *
  * Provides:
- * - Message storage and retrieval
- * - Contact management
- * - Group management
+ * - Message storage and retrieval (messages table)
+ * - Contact management (keyserver table)
+ * - Group management (groups + group_members tables)
  *
  * Platform implementations:
- * - Android: PostgreSQL JDBC (ai.cpunk.io:5432)
- * - iOS: PostgreSQL via libpq or HTTP API
+ * - Android: Disabled (no database credentials)
+ * - iOS: Disabled (no database credentials)
+ *
+ * TODO: Migrate to REST API architecture
  */
-expect class DatabaseRepository() {
+expect class DatabaseRepository(
+    dbHost: String = "",  // REMOVED: No hardcoded credentials
+    dbPort: Int = 0,
+    dbName: String = "",
+    dbUser: String = "",
+    dbPassword: String = ""
+) {
+    // ============================================================================
+    // MESSAGE OPERATIONS
+    // ============================================================================
+
     /**
      * Save encrypted message to database
      *
      * @param message Message to save
-     * @return Message ID
+     * @return Message ID (auto-generated)
      */
     suspend fun saveMessage(message: Message): Result<Long>
 
     /**
-     * Load messages for conversation
+     * Load conversation between two users
      *
-     * @param contactId Contact ID or group ID
+     * @param currentUser Current user's identity
+     * @param otherUser Other user's identity
      * @param limit Maximum number of messages
      * @param offset Offset for pagination
-     * @return List of messages
+     * @return List of messages (sorted by created_at DESC)
      */
-    suspend fun loadMessages(
-        contactId: String,
+    suspend fun loadConversation(
+        currentUser: String,
+        otherUser: String,
         limit: Int = 50,
         offset: Int = 0
     ): Result<List<Message>>
 
     /**
-     * Save contact to database
+     * Load group messages
+     *
+     * @param groupId Group ID
+     * @param limit Maximum number of messages
+     * @param offset Offset for pagination
+     * @return List of messages
+     */
+    suspend fun loadGroupMessages(
+        groupId: Int,
+        limit: Int = 50,
+        offset: Int = 0
+    ): Result<List<Message>>
+
+    /**
+     * Update message status
+     *
+     * @param messageId Message ID
+     * @param status New status ('sent', 'delivered', 'read')
+     * @return Unit
+     */
+    suspend fun updateMessageStatus(
+        messageId: Long,
+        status: String
+    ): Result<Unit>
+
+    // ============================================================================
+    // CONTACT OPERATIONS (keyserver table)
+    // ============================================================================
+
+    /**
+     * Save contact to keyserver
      *
      * @param contact Contact to save
+     * @return Unit
      */
     suspend fun saveContact(contact: Contact): Result<Unit>
 
     /**
-     * Load contact by ID
+     * Load contact by identity name
      *
-     * @param contactId Contact ID
+     * @param identity Identity name
      * @return Contact or null
      */
-    suspend fun loadContact(contactId: String): Result<Contact?>
+    suspend fun loadContact(identity: String): Result<Contact?>
 
     /**
-     * Load all contacts
+     * Load all contacts from keyserver
      *
      * @return List of contacts
      */
     suspend fun loadAllContacts(): Result<List<Contact>>
 
     /**
-     * Delete contact
+     * Delete contact from keyserver
      *
-     * @param contactId Contact ID
+     * @param identity Identity name
      */
-    suspend fun deleteContact(contactId: String): Result<Unit>
+    suspend fun deleteContact(identity: String): Result<Unit>
+
+    // ============================================================================
+    // GROUP OPERATIONS
+    // ============================================================================
 
     /**
-     * Save group to database
+     * Create group
      *
-     * @param group Group to save
+     * @param group Group to create
+     * @return Group ID (auto-generated)
      */
-    suspend fun saveGroup(group: Group): Result<Unit>
+    suspend fun createGroup(group: Group): Result<Int>
 
     /**
-     * Load group by ID
+     * Load group by ID (with members)
      *
      * @param groupId Group ID
-     * @return Group or null
+     * @return Group with members or null
      */
-    suspend fun loadGroup(groupId: String): Result<Group?>
+    suspend fun loadGroup(groupId: Int): Result<Group?>
 
     /**
-     * Load all groups
+     * Load all groups for current user
      *
+     * @param userIdentity User's identity
      * @return List of groups
      */
-    suspend fun loadAllGroups(): Result<List<Group>>
+    suspend fun loadUserGroups(userIdentity: String): Result<List<Group>>
 
     /**
-     * Delete group
+     * Add member to group
+     *
+     * @param groupId Group ID
+     * @param member Member to add
+     * @return Unit
+     */
+    suspend fun addGroupMember(groupId: Int, member: GroupMember): Result<Unit>
+
+    /**
+     * Remove member from group
+     *
+     * @param groupId Group ID
+     * @param memberIdentity Member identity to remove
+     * @return Unit
+     */
+    suspend fun removeGroupMember(groupId: Int, memberIdentity: String): Result<Unit>
+
+    /**
+     * Delete group (CASCADE deletes members)
      *
      * @param groupId Group ID
      */
-    suspend fun deleteGroup(groupId: String): Result<Unit>
+    suspend fun deleteGroup(groupId: Int): Result<Unit>
 
     /**
      * Close database connection

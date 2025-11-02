@@ -50,13 +50,13 @@ jbyteArray bytesToJbyteArray(JNIEnv* env, const uint8_t* bytes, size_t len) {
         return nullptr;
     }
 
-    jbyteArray jarray = env->NewByteArray(len);
+    jbyteArray jarray = env->NewByteArray((jsize)len);
     if (jarray == nullptr) {
-        LOGE("bytesToJbyteArray: Failed to allocate byte array of size %zu", len);
+        LOGE("bytesToJbyteArray: Failed to allocate jbyteArray of size %zu", len);
         return nullptr;
     }
 
-    env->SetByteArrayRegion(jarray, 0, len, reinterpret_cast<const jbyte*>(bytes));
+    env->SetByteArrayRegion(jarray, 0, (jsize)len, reinterpret_cast<const jbyte*>(bytes));
 
     if (env->ExceptionCheck()) {
         LOGE("bytesToJbyteArray: Exception during SetByteArrayRegion");
@@ -82,7 +82,6 @@ const char* jstringToString(JNIEnv* env, jstring jstr) {
         return nullptr;
     }
 
-    LOGD("jstringToString: Converted string: %s", str);
     return str;
 }
 
@@ -92,7 +91,6 @@ const char* jstringToString(JNIEnv* env, jstring jstr) {
 void releaseString(JNIEnv* env, jstring jstr, const char* str) {
     if (jstr != nullptr && str != nullptr) {
         env->ReleaseStringUTFChars(jstr, str);
-        LOGD("releaseString: Released string");
     }
 }
 
@@ -111,7 +109,6 @@ jstring stringToJstring(JNIEnv* env, const char* str) {
         return nullptr;
     }
 
-    LOGD("stringToJstring: Converted string: %s", str);
     return jstr;
 }
 
@@ -121,7 +118,7 @@ jstring stringToJstring(JNIEnv* env, const char* str) {
 void throwException(JNIEnv* env, const char* exception_class, const char* message) {
     jclass exClass = env->FindClass(exception_class);
     if (exClass == nullptr) {
-        LOGE("throwException: Failed to find exception class: %s", exception_class);
+        LOGE("throwException: Cannot find exception class: %s", exception_class);
         return;
     }
 
@@ -133,11 +130,61 @@ void throwException(JNIEnv* env, const char* exception_class, const char* messag
  * Throw DNA-specific exception
  */
 void throwDNAException(JNIEnv* env, int error_code, const char* context) {
-    const char* error_msg = dna_error_string(static_cast<dna_error_t>(error_code));
+    char message[256];
 
-    char full_message[512];
-    snprintf(full_message, sizeof(full_message), "%s: %s (code: %d)",
-             context, error_msg, error_code);
+    const char* error_str = "Unknown error";
+    switch (error_code) {
+        case DNA_OK:
+            return; // No error
+        case DNA_ERROR_INVALID_ARG:
+            error_str = "Invalid argument";
+            break;
+        case DNA_ERROR_MEMORY:
+            error_str = "Memory allocation failed";
+            break;
+        case DNA_ERROR_KEY_LOAD:
+            error_str = "Failed to load key";
+            break;
+        case DNA_ERROR_KEY_INVALID:
+            error_str = "Invalid key";
+            break;
+        case DNA_ERROR_CRYPTO:
+            error_str = "Cryptographic operation failed";
+            break;
+        case DNA_ERROR_VERIFY:
+            error_str = "Signature verification failed";
+            break;
+        case DNA_ERROR_DECRYPT:
+            error_str = "Decryption failed";
+            break;
+        case DNA_ERROR_NOT_FOUND:
+            error_str = "Resource not found";
+            break;
+        case DNA_ERROR_INTERNAL:
+            error_str = "Internal error";
+            break;
+        default:
+            error_str = "Unknown error";
+            break;
+    }
 
-    throwException(env, "java/lang/RuntimeException", full_message);
+    snprintf(message, sizeof(message), "DNA Error %d (%s): %s",
+             error_code, error_str, context ? context : "");
+
+    throwException(env, "java/lang/RuntimeException", message);
+}
+
+/**
+ * Securely wipe memory
+ */
+void secure_wipe(void* ptr, size_t len) {
+    if (ptr == nullptr || len == 0) {
+        return;
+    }
+
+    // Use volatile to prevent compiler optimization
+    volatile uint8_t* p = (volatile uint8_t*)ptr;
+    for (size_t i = 0; i < len; i++) {
+        p[i] = 0;
+    }
 }

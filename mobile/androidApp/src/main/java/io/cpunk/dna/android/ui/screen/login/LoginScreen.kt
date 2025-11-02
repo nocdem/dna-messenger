@@ -23,6 +23,7 @@ import io.cpunk.dna.android.R
 @Composable
 fun LoginScreen(
     onNavigateToHome: () -> Unit,
+    onNavigateToRestore: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -80,7 +81,7 @@ fun LoginScreen(
 
         // Restore from seed phrase button
         OutlinedButton(
-            onClick = { viewModel.navigateToRestore() },
+            onClick = { onNavigateToRestore() },
             enabled = !uiState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()

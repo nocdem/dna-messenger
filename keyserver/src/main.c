@@ -24,6 +24,40 @@ enum MHD_Result api_register_handler(struct MHD_Connection *connection, PGconn *
 enum MHD_Result api_update_handler(struct MHD_Connection *connection, PGconn *db_conn,
                                     const char *upload_data, size_t upload_data_size);
 
+// Logging API handler declarations
+enum MHD_Result api_log_event_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                       const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_log_message_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                         const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_log_connection_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                            const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_log_stats_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+
+// Messages API handler declarations
+enum MHD_Result api_save_message_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                         const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_load_conversation_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+enum MHD_Result api_load_group_messages_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+enum MHD_Result api_update_message_status_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                                  const char *url, const char *upload_data, size_t upload_data_size);
+
+// Contacts API handler declarations
+enum MHD_Result api_save_contact_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                         const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_load_contact_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+enum MHD_Result api_load_all_contacts_handler(struct MHD_Connection *connection, PGconn *db_conn);
+enum MHD_Result api_delete_contact_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+
+// Groups API handler declarations
+enum MHD_Result api_create_group_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                         const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_load_group_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+enum MHD_Result api_load_user_groups_handler(struct MHD_Connection *connection, PGconn *db_conn);
+enum MHD_Result api_add_group_member_handler(struct MHD_Connection *connection, PGconn *db_conn,
+                                             const char *url, const char *upload_data, size_t upload_data_size);
+enum MHD_Result api_remove_group_member_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+enum MHD_Result api_delete_group_handler(struct MHD_Connection *connection, PGconn *db_conn, const char *url);
+
 // Global state
 static struct MHD_Daemon *http_daemon = NULL;
 static PGconn *db_conn = NULL;
@@ -97,6 +131,34 @@ static enum MHD_Result answer_to_connection(void *cls, struct MHD_Connection *co
         // Route: POST /api/keyserver/update
         else if (strcmp(url, "/api/keyserver/update") == 0) {
             ret = api_update_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/logging/event
+        else if (strcmp(url, "/api/logging/event") == 0) {
+            ret = api_log_event_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/logging/message
+        else if (strcmp(url, "/api/logging/message") == 0) {
+            ret = api_log_message_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/logging/connection
+        else if (strcmp(url, "/api/logging/connection") == 0) {
+            ret = api_log_connection_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/messages
+        else if (strcmp(url, "/api/messages") == 0) {
+            ret = api_save_message_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/contacts
+        else if (strcmp(url, "/api/contacts") == 0) {
+            ret = api_save_contact_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/groups
+        else if (strcmp(url, "/api/groups") == 0) {
+            ret = api_create_group_handler(connection, db_conn, pd->data, pd->size);
+        }
+        // Route: POST /api/groups/:id/members
+        else if (strstr(url, "/api/groups/") && strstr(url, "/members") && !strrchr(url+12, '/')) {
+            ret = api_add_group_member_handler(connection, db_conn, url, pd->data, pd->size);
         } else {
             ret = http_send_error(connection, HTTP_NOT_FOUND, "Not found");
         }
@@ -126,6 +188,68 @@ static enum MHD_Result answer_to_connection(void *cls, struct MHD_Connection *co
         if (strncmp(url, "/api/keyserver/lookup/", 22) == 0) {
             const char *dna = url + 22;
             return api_lookup_handler(connection, db_conn, dna);
+        }
+
+        // Route: GET /api/logging/stats
+        if (strcmp(url, "/api/logging/stats") == 0 ||
+            strncmp(url, "/api/logging/stats?", 19) == 0) {
+            return api_log_stats_handler(connection, db_conn, url);
+        }
+
+        // Route: GET /api/messages/conversation
+        if (strncmp(url, "/api/messages/conversation", 26) == 0) {
+            return api_load_conversation_handler(connection, db_conn, url);
+        }
+
+        // Route: GET /api/messages/group/:id
+        if (strncmp(url, "/api/messages/group/", 20) == 0) {
+            return api_load_group_messages_handler(connection, db_conn, url);
+        }
+
+        // Route: GET /api/contacts/:identity
+        if (strncmp(url, "/api/contacts/", 14) == 0 && strchr(url+14, '/') == NULL) {
+            return api_load_contact_handler(connection, db_conn, url);
+        }
+
+        // Route: GET /api/contacts
+        if (strcmp(url, "/api/contacts") == 0) {
+            return api_load_all_contacts_handler(connection, db_conn);
+        }
+
+        // Route: GET /api/groups/:id
+        if (strncmp(url, "/api/groups/", 12) == 0 && strchr(url+12, '/') == NULL && strchr(url+12, '?') == NULL) {
+            return api_load_group_handler(connection, db_conn, url);
+        }
+
+        // Route: GET /api/groups?member=X
+        if (strncmp(url, "/api/groups?", 12) == 0) {
+            return api_load_user_groups_handler(connection, db_conn);
+        }
+    }
+
+    // PATCH requests
+    if (strcmp(method, "PATCH") == 0) {
+        // Route: PATCH /api/messages/:id/status
+        if (strstr(url, "/api/messages/") && strstr(url, "/status")) {
+            return api_update_message_status_handler(connection, db_conn, url, NULL, 0);
+        }
+    }
+
+    // DELETE requests
+    if (strcmp(method, "DELETE") == 0) {
+        // Route: DELETE /api/contacts/:identity
+        if (strncmp(url, "/api/contacts/", 14) == 0) {
+            return api_delete_contact_handler(connection, db_conn, url);
+        }
+
+        // Route: DELETE /api/groups/:id/members/:identity
+        if (strstr(url, "/api/groups/") && strstr(url, "/members/")) {
+            return api_remove_group_member_handler(connection, db_conn, url);
+        }
+
+        // Route: DELETE /api/groups/:id
+        if (strncmp(url, "/api/groups/", 12) == 0 && !strstr(url, "/members")) {
+            return api_delete_group_handler(connection, db_conn, url);
         }
     }
 

@@ -60,4 +60,23 @@ int http_get_client_ip(struct MHD_Connection *connection,
 json_object* http_parse_json_post(const char *upload_data,
                                   size_t upload_data_size);
 
+/**
+ * Base64 encode binary data
+ *
+ * @param data: Binary data to encode
+ * @param len: Length of data
+ * @return Allocated base64 string (caller must free) or NULL on error
+ */
+char* http_base64_encode(const unsigned char *data, size_t len);
+
+/**
+ * Base64 decode string to binary
+ *
+ * @param str: Base64 string to decode
+ * @param str_len: Length of string
+ * @param out_len: Output parameter for decoded length
+ * @return Allocated binary data (caller must free) or NULL on error
+ */
+unsigned char* http_base64_decode(const char *str, size_t str_len, size_t *out_len);
+
 #endif // HTTP_UTILS_H

@@ -8,6 +8,9 @@ plugins {
 
     // Kotlin Android
     kotlin("android") version "1.9.20" apply false
+
+    // Kotlin Serialization
+    kotlin("plugin.serialization") version "1.9.20" apply false
 }
 
 tasks.register("clean", Delete::class) {

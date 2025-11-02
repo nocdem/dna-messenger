@@ -5,6 +5,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.cpunk.dna.android.ui.screen.login.LoginScreen
+import io.cpunk.dna.android.ui.screen.login.RestoreScreenFull
+import io.cpunk.dna.android.ui.screen.home.HomeScreen
+import io.cpunk.dna.android.ui.screen.settings.SettingsScreen
+import io.cpunk.dna.android.ui.screen.wallet.WalletScreen
 
 /**
  * Navigation graph for DNA Messenger
@@ -26,31 +30,75 @@ fun DNANavGraph() {
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
+                },
+                onNavigateToRestore = {
+                    navController.navigate("restore")
                 }
             )
         }
 
-        // Home screen (TODO: implement)
+        // Restore from seed phrase screen
+        composable("restore") {
+            RestoreScreenFull(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onRestoreSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Home screen - Contacts and Groups
         composable("home") {
-            // TODO: Implement HomeScreen
-            // Placeholder for now
-            androidx.compose.material3.Text("Home Screen - TODO")
+            HomeScreen(
+                onNavigateToChat = { contactIdentity ->
+                    navController.navigate("chat/$contactIdentity")
+                },
+                onNavigateToGroup = { groupId ->
+                    navController.navigate("group/$groupId")
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
+                },
+                onNavigateToWallet = {
+                    navController.navigate("wallet")
+                }
+            )
         }
 
-        // Chat screen (TODO: implement)
+        // Chat screen (1:1 conversation)
         composable("chat/{contactId}") { backStackEntry ->
-            val contactId = backStackEntry.arguments?.getString("contactId")
+            val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
             // TODO: Implement ChatScreen
+            androidx.compose.material3.Text("Chat with: $contactId (Coming soon)")
         }
 
-        // Wallet screen (TODO: implement)
+        // Group chat screen
+        composable("group/{groupId}") { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull() ?: return@composable
+            // TODO: Implement GroupChatScreen
+            androidx.compose.material3.Text("Group chat: $groupId (Coming soon)")
+        }
+
+        // Wallet screen
         composable("wallet") {
-            // TODO: Implement WalletScreen
+            WalletScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
-        // Settings screen (TODO: implement)
+        // Settings screen
         composable("settings") {
-            // TODO: Implement SettingsScreen
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

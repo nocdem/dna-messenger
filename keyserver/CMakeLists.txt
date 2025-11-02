@@ -44,11 +44,18 @@ pkg_check_modules(JSON_C REQUIRED json-c)
 include_directories(${JSON_C_INCLUDE_DIRS})
 link_directories(${JSON_C_LIBRARY_DIRS})
 
+# libcurl (for logging client)
+pkg_check_modules(CURL REQUIRED libcurl)
+include_directories(${CURL_INCLUDE_DIRS})
+link_directories(${CURL_LIBRARY_DIRS})
+
 # Source files
 set(SOURCES
     src/main.c
     src/config.c
     src/db.c
+    src/db_logging.c
+    src/db_messages.c
     src/validation.c
     src/signature.c
     src/rate_limit.c
@@ -57,6 +64,25 @@ set(SOURCES
     src/api_lookup.c
     src/api_list.c
     src/api_health.c
+    src/api_log_event.c
+    src/api_log_message.c
+    src/api_log_connection.c
+    src/api_log_stats.c
+    src/api_save_message.c
+    src/api_load_conversation.c
+    src/api_load_group_messages.c
+    src/api_update_message_status.c
+    src/api_save_contact.c
+    src/api_load_contact.c
+    src/api_load_all_contacts.c
+    src/api_delete_contact.c
+    src/api_create_group.c
+    src/api_load_group.c
+    src/api_load_user_groups.c
+    src/api_add_group_member.c
+    src/api_remove_group_member.c
+    src/api_delete_group.c
+    src/logging_client.c
     src/http_utils.c
 )
 
@@ -65,9 +91,11 @@ set(HEADERS
     src/keyserver.h
     src/config.h
     src/db.h
+    src/db_logging.h
     src/validation.h
     src/signature.h
     src/rate_limit.h
+    src/logging_client.h
     src/http_utils.h
 )
 
@@ -79,6 +107,7 @@ target_link_libraries(keyserver
     ${MICROHTTPD_LIBRARIES}
     ${PostgreSQL_LIBRARY}
     ${JSON_C_LIBRARIES}
+    ${CURL_LIBRARIES}
     m  # math library
 )
 

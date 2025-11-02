@@ -37,10 +37,24 @@ pqsignum/
 # Build artifacts
 build/
 build-release/
+build-android*/
 dist/
 *.a
 *.o
 *.so
+
+# Gradle
+.gradle/
+mobile/.gradle/
+mobile/gradle/
+mobile/gradlew
+mobile/gradlew.bat
+mobile/local.properties
+mobile/shared/.cxx/
+
+# Java/Kotlin
+*.hprof
+*.class
 
 # Cross-compilation toolchains
 mxe/
@@ -51,6 +65,14 @@ mxe/
 *.priv
 keys/
 wallets/
+
+# Android signing
+*.keystore
+*.jks
+keystore.properties
+mobile/keystore.properties
+mobile/androidApp/keystore/*.keystore
+mobile/androidApp/keystore/*.jks
 
 # Logs
 *.log

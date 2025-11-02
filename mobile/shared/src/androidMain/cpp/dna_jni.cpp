@@ -6,9 +6,15 @@
 
 #include "dna_jni.h"
 #include "jni_utils.h"
-#include "dna_api.h"
 #include <cstdlib>
 #include <cstring>
+
+// C library headers - need extern "C" linkage
+extern "C" {
+#include "dna_api.h"
+#include "kem.h"                    // Kyber512: crypto_kem_keypair()
+#include "api.h"                    // Dilithium3: pqcrystals_dilithium3_ref_keypair()
+}
 
 /**
  * Initialize DNA context
@@ -77,7 +83,6 @@ Java_io_cpunk_dna_domain_DNAMessenger_nativeGenerateEncryptionKeyPair(JNIEnv* en
 
     // Generate keypair (using kyber512 library directly)
     // Note: dna_api.h doesn't expose keygen yet, so we'll use kyber512 directly
-    extern "C" int crypto_kem_keypair(uint8_t *pk, uint8_t *sk);
     int result = crypto_kem_keypair(pk, sk);
 
     if (result != 0) {
@@ -155,7 +160,6 @@ Java_io_cpunk_dna_domain_DNAMessenger_nativeGenerateSigningKeyPair(JNIEnv* env, 
     }
 
     // Generate keypair (using dilithium library directly)
-    extern "C" int pqcrystals_dilithium3_ref_keypair(uint8_t *pk, uint8_t *sk);
     int result = pqcrystals_dilithium3_ref_keypair(pk, sk);
 
     if (result != 0) {

@@ -91,3 +91,67 @@ json_object* http_parse_json_post(const char *upload_data,
 
     return obj;
 }
+
+// Base64 encoding table
+static const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+char* http_base64_encode(const unsigned char *data, size_t len) {
+    if (!data || len == 0) return NULL;
+
+    size_t out_len = 4 * ((len + 2) / 3);
+    char *encoded = malloc(out_len + 1);
+    if (!encoded) return NULL;
+
+    size_t i = 0, j = 0;
+    while (i < len) {
+        uint32_t octet_a = i < len ? data[i++] : 0;
+        uint32_t octet_b = i < len ? data[i++] : 0;
+        uint32_t octet_c = i < len ? data[i++] : 0;
+
+        uint32_t triple = (octet_a << 16) + (octet_b << 8) + octet_c;
+
+        encoded[j++] = base64_table[(triple >> 18) & 0x3F];
+        encoded[j++] = base64_table[(triple >> 12) & 0x3F];
+        encoded[j++] = base64_table[(triple >> 6) & 0x3F];
+        encoded[j++] = base64_table[triple & 0x3F];
+    }
+
+    // Add padding
+    size_t padding = (3 - (len % 3)) % 3;
+    for (size_t p = 0; p < padding; p++) {
+        encoded[out_len - 1 - p] = '=';
+    }
+
+    encoded[out_len] = '\0';
+    return encoded;
+}
+
+unsigned char* http_base64_decode(const char *str, size_t str_len, size_t *out_len) {
+    if (!str || str_len == 0 || !out_len) return NULL;
+
+    // Remove padding
+    while (str_len > 0 && str[str_len - 1] == '=') {
+        str_len--;
+    }
+
+    size_t decoded_len = (str_len * 3) / 4;
+    unsigned char *decoded = malloc(decoded_len + 1);
+    if (!decoded) return NULL;
+
+    size_t i = 0, j = 0;
+    while (i < str_len) {
+        uint32_t sextet_a = i < str_len ? strchr(base64_table, str[i++]) - base64_table : 0;
+        uint32_t sextet_b = i < str_len ? strchr(base64_table, str[i++]) - base64_table : 0;
+        uint32_t sextet_c = i < str_len ? strchr(base64_table, str[i++]) - base64_table : 0;
+        uint32_t sextet_d = i < str_len ? strchr(base64_table, str[i++]) - base64_table : 0;
+
+        uint32_t triple = (sextet_a << 18) + (sextet_b << 12) + (sextet_c << 6) + sextet_d;
+
+        if (j < decoded_len) decoded[j++] = (triple >> 16) & 0xFF;
+        if (j < decoded_len) decoded[j++] = (triple >> 8) & 0xFF;
+        if (j < decoded_len) decoded[j++] = triple & 0xFF;
+    }
+
+    *out_len = j;
+    return decoded;
+}

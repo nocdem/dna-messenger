@@ -89,6 +89,14 @@ void throwException(JNIEnv* env, const char* exception_class, const char* messag
  */
 void throwDNAException(JNIEnv* env, int error_code, const char* context);
 
+/**
+ * Securely wipe memory (prevent compiler optimization)
+ *
+ * @param ptr Memory to wipe
+ * @param len Length to wipe
+ */
+void secure_wipe(void* ptr, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

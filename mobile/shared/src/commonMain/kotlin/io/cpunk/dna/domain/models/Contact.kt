@@ -3,15 +3,27 @@ package io.cpunk.dna.domain.models
 /**
  * Contact data class
  * Represents a contact in DNA Messenger
+ *
+ * Maps to database table: keyserver
+ * Schema:
+ * - id (integer) - auto-generated
+ * - identity (text) - unique identity name
+ * - signing_pubkey (bytea) - Dilithium3 public key
+ * - signing_pubkey_len (integer)
+ * - encryption_pubkey (bytea) - Kyber512 public key
+ * - encryption_pubkey_len (integer)
+ * - fingerprint (text) - key fingerprint
+ * - created_at (timestamp)
  */
 data class Contact(
-    val id: String,
-    val name: String,
-    val encryptionPublicKey: ByteArray,  // Kyber512 public key (800 bytes)
-    val signingPublicKey: ByteArray,     // Dilithium3 public key (1952 bytes)
-    val lastSeen: Long? = null,
-    val isOnline: Boolean = false,
-    val avatarUrl: String? = null
+    val id: Int = 0,                     // Database ID (auto-generated)
+    val identity: String,                // Unique identity name
+    val signingPubkey: ByteArray,        // Dilithium3 public key (1952 bytes)
+    val signingPubkeyLen: Int = signingPubkey.size,
+    val encryptionPubkey: ByteArray,     // Kyber512 public key (800 bytes)
+    val encryptionPubkeyLen: Int = encryptionPubkey.size,
+    val fingerprint: String? = null,     // Key fingerprint (optional)
+    val createdAt: Long? = null          // Unix timestamp (milliseconds)
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -20,24 +32,26 @@ data class Contact(
         other as Contact
 
         if (id != other.id) return false
-        if (name != other.name) return false
-        if (!encryptionPublicKey.contentEquals(other.encryptionPublicKey)) return false
-        if (!signingPublicKey.contentEquals(other.signingPublicKey)) return false
-        if (lastSeen != other.lastSeen) return false
-        if (isOnline != other.isOnline) return false
-        if (avatarUrl != other.avatarUrl) return false
+        if (identity != other.identity) return false
+        if (!signingPubkey.contentEquals(other.signingPubkey)) return false
+        if (signingPubkeyLen != other.signingPubkeyLen) return false
+        if (!encryptionPubkey.contentEquals(other.encryptionPubkey)) return false
+        if (encryptionPubkeyLen != other.encryptionPubkeyLen) return false
+        if (fingerprint != other.fingerprint) return false
+        if (createdAt != other.createdAt) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + name.hashCode()
-        result = 31 * result + encryptionPublicKey.contentHashCode()
-        result = 31 * result + signingPublicKey.contentHashCode()
-        result = 31 * result + (lastSeen?.hashCode() ?: 0)
-        result = 31 * result + isOnline.hashCode()
-        result = 31 * result + (avatarUrl?.hashCode() ?: 0)
+        var result = id
+        result = 31 * result + identity.hashCode()
+        result = 31 * result + signingPubkey.contentHashCode()
+        result = 31 * result + signingPubkeyLen
+        result = 31 * result + encryptionPubkey.contentHashCode()
+        result = 31 * result + encryptionPubkeyLen
+        result = 31 * result + (fingerprint?.hashCode() ?: 0)
+        result = 31 * result + (createdAt?.hashCode() ?: 0)
         return result
     }
 }

@@ -24,8 +24,8 @@ import io.cpunk.dna.android.R
  */
 @Composable
 fun RestoreScreen(
-    onNavigateToHome: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onRestoreSuccess: () -> Unit
 ) {
     var seedPhrase by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }

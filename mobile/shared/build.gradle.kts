@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("com.android.library")
 }
 
@@ -73,8 +74,11 @@ kotlin {
                 // PostgreSQL driver for Android
                 implementation("org.postgresql:postgresql:42.6.0")
 
-                // HTTP client
+                // HTTP client (for logging API)
                 implementation("io.ktor:ktor-client-android:2.3.5")
+
+                // DataStore for preferences
+                implementation("androidx.datastore:datastore-preferences:1.0.0")
             }
         }
 
@@ -104,8 +108,8 @@ android {
         minSdk = 26
 
         ndk {
-            // ABIs to build for
-            abiFilters += setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            // ABIs to build for (only arm64-v8a for stub testing)
+            abiFilters += setOf("arm64-v8a")
         }
 
         externalNativeBuild {
