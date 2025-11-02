@@ -347,10 +347,10 @@ DNA Messenger is a post-quantum end-to-end encrypted messaging platform forked f
 
 ---
 
-## Phase 9: Distributed P2P Architecture 📋 FUTURE PLANS
+## Phase 9: Distributed P2P Architecture 🚧 IN PROGRESS
 
 **Timeline:** ~6 months (long-term vision)
-**Status:** Research & Design phase
+**Status:** Phase 9.1 & 9.2 COMPLETE - P2P Transport, DHT, and Offline Queue operational
 **Prerequisites:** Phase 5-7 complete
 **Design Docs:** See `/futuredesign/` folder for detailed specifications
 
@@ -364,20 +364,33 @@ DNA Messenger is a post-quantum end-to-end encrypted messaging platform forked f
 
 ### Tasks
 
-#### Phase 9.1: P2P Transport Layer (6-8 weeks)
-- [ ] Integrate libp2p (C++) or libdatachannel (C)
-- [ ] Implement Kademlia DHT for peer discovery
-- [ ] NAT traversal using libnice (ICE/STUN/TURN)
-- [ ] Direct peer-to-peer messaging
-- [ ] Bootstrap node infrastructure (3-5 public nodes)
-- [ ] Connection management and reconnection
+#### Phase 9.1: P2P Transport Layer ✅ COMPLETE
+- [x] ~~Integrate libp2p~~ **Used OpenDHT instead (C++ library for DHT)**
+- [x] Implement DHT for peer discovery (OpenDHT 3.5.5)
+- [x] P2P transport layer with TCP + DHT (`p2p_transport.c`)
+- [x] Direct peer-to-peer messaging capability
+- [x] Bootstrap node infrastructure (3 public VPS nodes):
+  - US-1: dna-bootstrap-us-1 @ 154.38.182.161:4000
+  - EU-1: dna-bootstrap-eu-1 @ 164.68.105.227:4000
+  - EU-2: dna-bootstrap-eu-2 @ 164.68.116.180:4000
+- [x] Auto-start systemd services on all bootstrap nodes
+- [x] Connection management and DHT presence registration
+- [ ] NAT traversal using libnice (ICE/STUN/TURN) - **Deferred to Phase 9.2**
 
-#### Phase 9.2: Distributed Storage Layer (6-8 weeks)
-- [ ] Integrate OpenDHT for distributed message storage
-- [ ] Encrypted blob storage in DHT (k=5 replication)
-- [ ] Store-and-forward protocol for offline users
-- [ ] Automatic garbage collection (30-day expiry)
-- [ ] Message retrieval and deletion protocol
+#### Phase 9.2: Offline Message Queueing ✅ COMPLETE
+**Completed:** 2025-11-02
+
+- [x] Integrate OpenDHT for offline message storage
+- [x] Binary message serialization (magic bytes, timestamps, expiry)
+- [x] Store-and-forward protocol for offline users
+- [x] Automatic expiry (7-day TTL with configurable timeout)
+- [x] Message retrieval via DHT queries
+- [x] Automatic polling (2-minute timer in GUI)
+- [x] Queue clearing after successful delivery
+- [x] SHA256-based DHT keys (recipient + ":offline_queue")
+- [x] Single-queue-per-recipient architecture
+- [x] Cross-platform support (Windows/Linux network byte order)
+- [x] Hybrid delivery: P2P direct → DHT queue → PostgreSQL fallback
 
 #### Phase 9.3: Local Cache & Sync (4 weeks)
 - [ ] SQLite encrypted with DNA's PQ crypto (Kyber512 + AES-256-GCM)

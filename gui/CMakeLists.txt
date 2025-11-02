@@ -18,6 +18,14 @@ set(GUI_SOURCES
     main.cpp
     MainWindow.cpp
     MainWindow.h
+    IdentitySelectionDialog.cpp
+    IdentitySelectionDialog.h
+    CreateIdentityDialog.cpp
+    CreateIdentityDialog.h
+    RestoreIdentityDialog.cpp
+    RestoreIdentityDialog.h
+    SeedPhraseWidget.cpp
+    SeedPhraseWidget.h
     WalletDialog.cpp
     WalletDialog.h
     SendTokensDialog.cpp
@@ -32,6 +40,11 @@ set(GUI_SOURCES
     ../cellframe_rpc.c
     ../cellframe_addr.c
     ../base58.c
+    ../bip39.c
+    ../bip39_pbkdf2.c
+    ../seed_derivation.c
+    ../keygen.c
+    ../messenger/keyserver_register.c
     resources.qrc
 )
 
@@ -110,6 +123,17 @@ if(WIN32)
         crypt32      # Cryptography functions
         wldap32      # LDAP support (PostgreSQL + CURL)
         normaliz     # Internationalization (CURL)
+    )
+
+    # Phase 9.1: P2P/DHT support - explicit linkage needed for Windows static builds
+    # Use linker groups and whole-archive to handle circular dependencies and force gnutls stubs
+    target_link_libraries(dna_messenger_gui
+        -Wl,--start-group
+        p2p_transport  # P2P transport layer (depends on DHT)
+        -Wl,--whole-archive
+        dht_lib        # DHT library with gnutls stubs (force all symbols including stubs)
+        -Wl,--no-whole-archive
+        -Wl,--end-group
     )
 endif()
 
