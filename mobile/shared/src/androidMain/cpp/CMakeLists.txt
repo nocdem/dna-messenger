@@ -21,6 +21,11 @@ include_directories(
     ${DNA_INCLUDE_DIR}
     ${DNA_INCLUDE_DIR}/crypto/kyber512
     ${DNA_INCLUDE_DIR}/crypto/dilithium
+    ${DNA_INCLUDE_DIR}/dht
+    ${DNA_INCLUDE_DIR}/p2p
+    ${DNA_LIBS_DIR}/include
+    ${DNA_LIBS_DIR}/include/dht
+    ${DNA_LIBS_DIR}/include/p2p
     /tmp/boringssl/include
     ${CMAKE_SOURCE_DIR}
 )
@@ -31,8 +36,10 @@ add_library(
     SHARED
     dna_jni.cpp
     # wallet_jni.cpp  # TODO: Add back when json-c is available for Android
+    p2p_jni.cpp                 # P2P/DHT JNI wrapper
     jni_utils.cpp
-    boringssl_compat.c  # Compatibility shim for missing BoringSSL functions
+    boringssl_compat.c          # Compatibility shim for missing BoringSSL functions
+    messenger_mobile_stubs.c    # Mobile stubs for PostgreSQL functions
 )
 
 # Link libraries (order matters for static libs!)
@@ -40,21 +47,41 @@ add_library(
 target_link_libraries(
     dna_jni
     ${log-lib}
+
     # Application libraries:
     ${DNA_LIBS_DIR}/libdna_lib.a
     ${DNA_LIBS_DIR}/libkyber512.a
     ${DNA_LIBS_DIR}/libdilithium.a
     ${DNA_LIBS_DIR}/libcellframe_dilithium.a
-    # BoringSSL (after DNA libs, they depend on it):
+
+    # P2P/DHT libraries (must come before OpenDHT):
+    ${DNA_LIBS_DIR}/lib/libmessenger_p2p.a
+    ${DNA_LIBS_DIR}/lib/libp2p_transport.a
+    ${DNA_LIBS_DIR}/lib/libdht_lib.a
+
+    # OpenDHT and dependencies (in dependency order):
+    ${DNA_LIBS_DIR}/lib/libopendht-c.a
+    ${DNA_LIBS_DIR}/lib/libopendht.a
+    ${DNA_LIBS_DIR}/lib/libjsoncpp.a
+    ${DNA_LIBS_DIR}/lib/libfmt.a
+    ${DNA_LIBS_DIR}/lib/libargon2.a
+    ${DNA_LIBS_DIR}/lib/libgnutls.a
+    ${DNA_LIBS_DIR}/lib/libhogweed.a
+    ${DNA_LIBS_DIR}/lib/libnettle.a
+    ${DNA_LIBS_DIR}/lib/libtasn1.a
+    ${DNA_LIBS_DIR}/lib/libgmp.a
+
+    # BoringSSL (after all libs, many depend on it):
     ${BORINGSSL_DIR}/libssl.a
     ${BORINGSSL_DIR}/libcrypto.a
     # Link crypto again for circular dependencies:
     ${BORINGSSL_DIR}/libssl.a
     ${BORINGSSL_DIR}/libcrypto.a
+
     # Android system libraries:
     m
     atomic
-    c++_static  # C++ standard library (needed by BoringSSL)
+    c++_static  # C++ standard library (needed by BoringSSL + OpenDHT)
 )
 
 # Compiler flags

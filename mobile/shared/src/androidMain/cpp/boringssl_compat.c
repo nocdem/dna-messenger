@@ -127,3 +127,53 @@ ssize_t getrandom(void *buf, size_t buflen, unsigned int flags) {
     close(fd);
     return result;
 }
+
+// ============================================================================
+// Android API Compatibility Shims for API < 30
+// ============================================================================
+
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
+#include <android/log.h>
+
+#define COMPAT_LOG_TAG "AndroidCompat"
+
+/**
+ * pthread_cond_clockwait() - Wait on condition variable with clock
+ *
+ * This function is available in API 30+, but we need to support API 26.
+ * We provide a compatibility implementation using pthread_cond_timedwait.
+ */
+int pthread_cond_clockwait(pthread_cond_t *cond,
+                           pthread_mutex_t *mutex,
+                           clockid_t clock_id,
+                           const struct timespec *abstime) {
+    // For API < 30, fall back to pthread_cond_timedwait
+    // This uses CLOCK_REALTIME, which may not be exactly what the caller wants,
+    // but it's the best we can do on older Android
+    __android_log_print(ANDROID_LOG_DEBUG, COMPAT_LOG_TAG,
+                       "pthread_cond_clockwait compat shim called (clock_id=%d)", clock_id);
+
+    return pthread_cond_timedwait(cond, mutex, abstime);
+}
+
+/**
+ * aligned_alloc() - Allocate aligned memory
+ *
+ * This function is available in API 28+, but we need to support API 26.
+ * We provide a compatibility implementation using posix_memalign.
+ */
+void* aligned_alloc(size_t alignment, size_t size) {
+    void *ptr = NULL;
+
+    // posix_memalign is available on older Android
+    int result = posix_memalign(&ptr, alignment, size);
+
+    if (result != 0) {
+        errno = result;
+        return NULL;
+    }
+
+    return ptr;
+}
